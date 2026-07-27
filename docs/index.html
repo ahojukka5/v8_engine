@@ -129,7 +129,7 @@
     <div id="loadingScreen" class="loading-screen">
       <div class="loader-engine" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
       <p>ASSEMBLING PROCEDURAL V8</p>
-      <small>Resolving valve kinematics, surface attachments, fluid circuits and service hardware…</small>
+      <small>Resolving valve kinematics, tangent belt paths, timing chains and service hardware…</small>
     </div>
 
     <dialog id="helpDialog" class="help-dialog glass">
@@ -150,6 +150,7 @@
       </div>
       <p class="help-note">The nonlinear speed slider reserves substantial travel for 0–20 rpm. The 720° cycle slider and step buttons provide deterministic inspection of every kinematic state.</p>
       <p class="help-note">Valve guides and spring seats remain fixed while valves, retainers and buckets move; inner and outer springs compress with measured lift.</p>
+      <p class="help-note">The serpentine belt is generated from common tangents and pulley wrap arcs on one datum plane; compact timing chains run separately behind it.</p>
       <p class="help-note">External fittings, plugs and electrical lugs are mounted to explicit component surfaces rather than placed as unsupported decoration.</p>
       <p class="help-note">The engine is not imported CAD. Every visible part is generated at runtime from parametric primitives and curves in <code>docs/engine/</code>.</p>
     </dialog>
@@ -160,6 +161,7 @@
   <script type="module" src="./engine/valvetrain-cleanup-pass.js"></script>
   <script type="module" src="./engine/attachment-cleanup-pass.js"></script>
   <script type="module" src="./engine/final-artifact-sweep.js"></script>
+  <script type="module" src="./engine/front-drive-rebuild.js"></script>
   <script type="module" src="./main.js"></script>
 </body>
 </html>
