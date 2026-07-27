@@ -39,16 +39,32 @@
       <section>
         <div class="section-heading">
           <span>POWERTRAIN</span>
-          <output id="engineState" class="status-chip running">RUNNING</output>
+          <output id="engineState" class="status-chip running">CRAWL</output>
         </div>
         <div class="button-row two">
-          <button id="runToggle" class="primary-button" type="button">Pause engine</button>
+          <button id="runToggle" class="primary-button" type="button">Stop engine</button>
           <button id="resetView" class="secondary-button" type="button">Reset view</button>
         </div>
         <label class="range-control" for="rpmControl">
-          <span><b>Engine speed</b><output id="rpmOutput">820 rpm</output></span>
-          <input id="rpmControl" type="range" min="80" max="6200" value="820" step="20">
+          <span><b>Engine speed</b><output id="rpmOutput">12 rpm · crawl</output></span>
+          <input id="rpmControl" type="range" min="0" max="1000" value="144" step="1" aria-describedby="rpmScaleHint">
+          <small id="rpmScaleHint" class="range-hint">First quarter: 0–20 rpm precision · remaining range: 20–6,200 rpm</small>
         </label>
+
+        <div class="manual-control">
+          <label class="range-control" for="cycleControl">
+            <span><b>Four-stroke cycle</b><output id="cycleOutput">0° / 720°</output></span>
+            <input id="cycleControl" type="range" min="0" max="720" value="0" step="1">
+          </label>
+          <div class="step-grid" aria-label="Manual crank-angle stepping">
+            <button id="stepMinusTen" type="button">−10°</button>
+            <button id="stepMinusOne" type="button">−1°</button>
+            <button id="stepPlusOne" type="button">+1°</button>
+            <button id="stepPlusTen" type="button">+10°</button>
+          </div>
+          <p class="manual-hint">Dragging or stepping stops the engine and updates pistons, rods, cams, valves and firing state immediately.</p>
+        </div>
+
         <div class="telemetry-grid">
           <div><span>FIRING</span><strong id="firingCylinder">#1</strong></div>
           <div><span>CRANK</span><strong id="crankAngle">0°</strong></div>
@@ -59,9 +75,9 @@
 
       <section>
         <div class="section-heading"><span>INSPECTION</span></div>
-        <label class="toggle-row"><span><b>Cutaway body</b><small>Reveal internals</small></span><input id="cutawayToggle" type="checkbox" checked><i></i></label>
+        <label class="toggle-row"><span><b>Cutaway body</b><small>Reveal internals</small></span><input id="cutawayToggle" type="checkbox"><i></i></label>
         <label class="toggle-row"><span><b>Exploded assembly</b><small>Separate systems</small></span><input id="explodeToggle" type="checkbox"><i></i></label>
-        <label class="toggle-row"><span><b>Part labels</b><small>Engineering callouts</small></span><input id="labelsToggle" type="checkbox" checked><i></i></label>
+        <label class="toggle-row"><span><b>Part labels</b><small>Engineering callouts</small></span><input id="labelsToggle" type="checkbox"><i></i></label>
         <label class="toggle-row"><span><b>Combustion pulses</b><small>Visualize firing</small></span><input id="combustionToggle" type="checkbox" checked><i></i></label>
         <label class="toggle-row"><span><b>Wire overlay</b><small>Show topology</small></span><input id="wireToggle" type="checkbox"><i></i></label>
       </section>
@@ -113,7 +129,7 @@
     <div id="loadingScreen" class="loading-screen">
       <div class="loader-engine" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
       <p>ASSEMBLING PROCEDURAL V8</p>
-      <small>Generating crankshaft, valvetrain and fluid paths…</small>
+      <small>Generating crankshaft, valvetrain, wiring and service hardware…</small>
     </div>
 
     <dialog id="helpDialog" class="help-dialog glass">
@@ -125,12 +141,15 @@
         <div><kbd>Wheel</kbd><span>Zoom</span></div>
         <div><kbd>Right drag</kbd><span>Pan</span></div>
         <div><kbd>Click</kbd><span>Inspect part</span></div>
-        <div><kbd>Space</kbd><span>Pause / run</span></div>
+        <div><kbd>Space</kbd><span>Stop / start</span></div>
+        <div><kbd>← / →</kbd><span>Step cycle by 1°</span></div>
+        <div><kbd>Shift + ← / →</kbd><span>Step cycle by 10°</span></div>
         <div><kbd>E</kbd><span>Exploded view</span></div>
         <div><kbd>C</kbd><span>Cutaway body</span></div>
         <div><kbd>L</kbd><span>Labels</span></div>
       </div>
-      <p class="help-note">The engine is not imported CAD. Every visible part is generated at runtime from parametric primitives and curves in <code>docs/engine/v8-engine.js</code>.</p>
+      <p class="help-note">The nonlinear speed slider reserves substantial travel for 0–20 rpm. The 720° cycle slider and step buttons provide deterministic inspection of every kinematic state.</p>
+      <p class="help-note">The engine is not imported CAD. Every visible part is generated at runtime from parametric primitives and curves in <code>docs/engine/</code>.</p>
     </dialog>
 
     <noscript>This visualization requires JavaScript and WebGL.</noscript>
