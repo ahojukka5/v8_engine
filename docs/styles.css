@@ -72,7 +72,7 @@ h1 { margin: 0; font-size: clamp(15px, 2vw, 21px); line-height: 1; letter-spacin
   z-index: 18;
   top: 112px;
   left: 22px;
-  width: 310px;
+  width: 322px;
   max-height: calc(100vh - 150px);
   overflow: auto;
   border-radius: 17px;
@@ -86,7 +86,7 @@ h1 { margin: 0; font-size: clamp(15px, 2vw, 21px); line-height: 1; letter-spacin
 .status-chip.paused { color: #d2d6db; background: rgba(255,255,255,.06); border-color: var(--line); }
 .button-row { display: grid; gap: 8px; }
 .button-row.two { grid-template-columns: 1.35fr 1fr; }
-.primary-button, .secondary-button, .camera-grid button, .filter-grid button {
+.primary-button, .secondary-button, .camera-grid button, .filter-grid button, .step-grid button {
   border-radius: 9px;
   border: 1px solid var(--line);
   cursor: pointer;
@@ -95,14 +95,23 @@ h1 { margin: 0; font-size: clamp(15px, 2vw, 21px); line-height: 1; letter-spacin
 .primary-button, .secondary-button { height: 38px; font-size: 11px; font-weight: 720; }
 .primary-button { border-color: rgba(240,90,40,.45); background: linear-gradient(180deg, #f76c37, #c7431f); box-shadow: inset 0 1px rgba(255,255,255,.2), 0 8px 22px rgba(240,90,40,.14); }
 .secondary-button { background: rgba(255,255,255,.045); }
-.primary-button:hover, .secondary-button:hover, .camera-grid button:hover, .filter-grid button:hover { transform: translateY(-1px); border-color: rgba(255,255,255,.28); }
+.primary-button:hover, .secondary-button:hover, .camera-grid button:hover, .filter-grid button:hover, .step-grid button:hover { transform: translateY(-1px); border-color: rgba(255,255,255,.28); }
 .range-control { display: block; margin-top: 15px; }
-.range-control > span { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 9px; }
+.range-control > span { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 9px; gap: 12px; }
 .range-control b { font-size: 11px; }
-.range-control output { color: var(--accent-hot); font-size: 11px; font-variant-numeric: tabular-nums; }
+.range-control output { color: var(--accent-hot); font-size: 11px; font-variant-numeric: tabular-nums; text-align: right; }
+.range-hint { display: block; margin-top: 8px; color: var(--muted); font-size: 8px; line-height: 1.4; }
 input[type="range"] { width: 100%; height: 4px; appearance: none; border-radius: 999px; background: linear-gradient(90deg, var(--accent) 0 12%, rgba(255,255,255,.13) 12% 100%); outline: none; }
 input[type="range"]::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #f3f5f6; border: 4px solid #d95027; box-shadow: 0 2px 7px rgba(0,0,0,.45); cursor: pointer; }
 input[type="range"]::-moz-range-thumb { width: 10px; height: 10px; border-radius: 50%; background: #f3f5f6; border: 4px solid #d95027; cursor: pointer; }
+
+.manual-control { margin-top: 14px; padding-top: 1px; border-top: 1px solid rgba(255,255,255,.06); }
+.manual-control .range-control { margin-top: 13px; }
+.step-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 12px; }
+.step-grid button { min-height: 32px; background: rgba(255,255,255,.045); color: #d7dde3; font-size: 10px; font-weight: 760; font-variant-numeric: tabular-nums; }
+.step-grid button:nth-child(2), .step-grid button:nth-child(3) { border-color: rgba(240,90,40,.28); background: rgba(240,90,40,.08); color: #ffb089; }
+.manual-hint { margin: 9px 0 0; color: var(--muted); font-size: 8px; line-height: 1.45; }
+
 .telemetry-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 15px; }
 .telemetry-grid div { padding: 9px 5px 8px; text-align: center; border: 1px solid rgba(255,255,255,.07); background: rgba(255,255,255,.025); border-radius: 8px; }
 .telemetry-grid span { display: block; color: var(--muted); font-size: 7px; letter-spacing: .11em; font-weight: 800; margin-bottom: 3px; }
@@ -161,14 +170,15 @@ input[type="range"]::-moz-range-thumb { width: 10px; height: 10px; border-radius
 .loader-engine span:nth-child(4) { animation-delay: -.75s; }
 @keyframes piston { from { transform: translateY(-11px); } to { transform: translateY(11px); } }
 
-.help-dialog { width: min(520px, calc(100vw - 34px)); color: var(--text); border-radius: 18px; padding: 24px; }
+.help-dialog { width: min(560px, calc(100vw - 34px)); color: var(--text); border-radius: 18px; padding: 24px; }
 .help-dialog::backdrop { background: rgba(0,0,0,.62); backdrop-filter: blur(6px); }
 .help-dialog > button { position: absolute; right: 12px; top: 12px; width: 31px; height: 31px; border: 0; border-radius: 8px; background: rgba(255,255,255,.06); color: white; font-size: 18px; cursor: pointer; }
 .help-dialog h2 { margin: 0 0 18px; font-size: 25px; }
 .help-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.help-grid div { display: grid; grid-template-columns: 80px 1fr; align-items: center; padding: 8px; border-radius: 8px; background: rgba(255,255,255,.035); font-size: 10px; }
+.help-grid div { display: grid; grid-template-columns: 100px 1fr; align-items: center; padding: 8px; border-radius: 8px; background: rgba(255,255,255,.035); font-size: 10px; }
 kbd { display: inline-flex; justify-self: start; border: 1px solid rgba(255,255,255,.18); border-bottom-width: 2px; border-radius: 5px; padding: 4px 6px; background: rgba(255,255,255,.055); color: #f4f6f7; font-size: 9px; }
 .help-note { margin: 18px 0 0; color: #9ca7b1; font-size: 10px; line-height: 1.55; }
+.help-note + .help-note { margin-top: 8px; }
 .help-note code { color: #ff9c69; }
 
 @media (max-width: 760px) {
@@ -177,11 +187,12 @@ kbd { display: inline-flex; justify-self: start; border: 1px solid rgba(255,255,
   .eyebrow { font-size: 8px; }
   h1 { font-size: 13px; }
   .repo-link { display: none; }
-  .control-panel { left: 10px; right: 10px; top: auto; bottom: 10px; width: auto; max-height: 42vh; border-radius: 14px; }
+  .control-panel { left: 10px; right: 10px; top: auto; bottom: 10px; width: auto; max-height: 48vh; border-radius: 14px; }
   .control-panel section { padding: 13px 14px; }
-  .part-inspector { right: 10px; bottom: calc(42vh + 20px); }
+  .part-inspector { right: 10px; bottom: calc(48vh + 20px); }
   .view-hint { display: none; }
   .telemetry-grid { grid-template-columns: repeat(4, minmax(55px,1fr)); }
+  .help-grid { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
