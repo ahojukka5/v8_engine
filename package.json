@@ -1,10 +1,10 @@
 {
   "name": "procedural-v8-engine",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "private": true,
   "type": "module",
   "scripts": {
     "serve": "python3 -m http.server 8000 --directory docs",
-    "check": "node --check docs/main.js && node --check docs/engine/materials.js && node --check docs/engine/primitives.js && node --check docs/engine/v8-engine.js && node --check docs/engine/detail-pass.js && node --check docs/engine/micro-detail-pass.js && node --check docs/engine/valvetrain-cleanup-pass.js && node --check docs/engine/attachment-cleanup-pass.js"
+    "check": "node --check docs/main.js && node --check docs/engine/materials.js && node --check docs/engine/primitives.js && node --check docs/engine/v8-engine.js && node --check docs/engine/detail-pass.js && node --check docs/engine/micro-detail-pass.js && node --check docs/engine/valvetrain-cleanup-pass.js && node --check docs/engine/attachment-cleanup-pass.js && node --check docs/engine/final-artifact-sweep.js"
   }
 }
