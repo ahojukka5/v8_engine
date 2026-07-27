@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080b10">
+  <meta name="description" content="A fully procedural, animated V8 engine assembled from Three.js geometry.">
+  <title>V8 Engine — Procedural Three.js Study</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app" aria-label="Interactive V8 engine viewer">
+    <canvas id="viewport"></canvas>
+
+    <header class="topbar glass">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span></div>
+        <div>
+          <p class="eyebrow">PROCEDURAL ENGINE STUDY</p>
+          <h1>V8 / 90° CROSS-PLANE</h1>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button id="helpButton" class="icon-button" type="button" aria-label="Open controls help">?</button>
+        <a class="repo-link" href="https://github.com/ahojukka5/v8_engine" target="_blank" rel="noreferrer">SOURCE ↗</a>
+      </div>
+    </header>
+
+    <aside class="control-panel glass" aria-label="Engine controls">
+      <section>
+        <div class="section-heading">
+          <span>POWERTRAIN</span>
+          <output id="engineState" class="status-chip running">RUNNING</output>
+        </div>
+        <div class="button-row two">
+          <button id="runToggle" class="primary-button" type="button">Pause engine</button>
+          <button id="resetView" class="secondary-button" type="button">Reset view</button>
+        </div>
+        <label class="range-control" for="rpmControl">
+          <span><b>Engine speed</b><output id="rpmOutput">820 rpm</output></span>
+          <input id="rpmControl" type="range" min="80" max="6200" value="820" step="20">
+        </label>
+        <div class="telemetry-grid">
+          <div><span>FIRING</span><strong id="firingCylinder">#1</strong></div>
+          <div><span>CRANK</span><strong id="crankAngle">0°</strong></div>
+          <div><span>FPS</span><strong id="fpsValue">--</strong></div>
+          <div><span>TRIANGLES</span><strong id="triangleValue">--</strong></div>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-heading"><span>INSPECTION</span></div>
+        <label class="toggle-row"><span><b>Cutaway body</b><small>Reveal internals</small></span><input id="cutawayToggle" type="checkbox" checked><i></i></label>
+        <label class="toggle-row"><span><b>Exploded assembly</b><small>Separate systems</small></span><input id="explodeToggle" type="checkbox"><i></i></label>
+        <label class="toggle-row"><span><b>Part labels</b><small>Engineering callouts</small></span><input id="labelsToggle" type="checkbox" checked><i></i></label>
+        <label class="toggle-row"><span><b>Combustion pulses</b><small>Visualize firing</small></span><input id="combustionToggle" type="checkbox" checked><i></i></label>
+        <label class="toggle-row"><span><b>Wire overlay</b><small>Show topology</small></span><input id="wireToggle" type="checkbox"><i></i></label>
+      </section>
+
+      <section>
+        <div class="section-heading"><span>CAMERAS</span></div>
+        <div class="camera-grid">
+          <button type="button" data-camera="hero">Hero</button>
+          <button type="button" data-camera="front">Front</button>
+          <button type="button" data-camera="side">Side</button>
+          <button type="button" data-camera="top">Top</button>
+          <button type="button" data-camera="crank">Crank</button>
+          <button type="button" data-camera="valves">Valves</button>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-heading"><span>VISIBILITY</span></div>
+        <div id="systemFilters" class="filter-grid">
+          <button type="button" class="active" data-system="all">All</button>
+          <button type="button" data-system="structure">Block</button>
+          <button type="button" data-system="rotating">Bottom end</button>
+          <button type="button" data-system="valvetrain">Valvetrain</button>
+          <button type="button" data-system="intake">Intake</button>
+          <button type="button" data-system="exhaust">Exhaust</button>
+          <button type="button" data-system="accessories">Accessories</button>
+        </div>
+      </section>
+    </aside>
+
+    <aside id="partInspector" class="part-inspector glass hidden" aria-live="polite">
+      <button id="closeInspector" type="button" aria-label="Close part inspector">×</button>
+      <p id="partSystem" class="eyebrow">SYSTEM</p>
+      <h2 id="partName">Part name</h2>
+      <p id="partDescription">Select any highlighted part to inspect its role.</p>
+      <dl>
+        <div><dt>Material</dt><dd id="partMaterial">—</dd></div>
+        <div><dt>Function</dt><dd id="partFunction">—</dd></div>
+      </dl>
+    </aside>
+
+    <div id="labelsLayer" class="labels-layer" aria-hidden="true"></div>
+
+    <div class="view-hint glass">
+      <span class="mouse-icon" aria-hidden="true"></span>
+      <span>Drag to orbit · Wheel to zoom · Click a component</span>
+    </div>
+
+    <div id="loadingScreen" class="loading-screen">
+      <div class="loader-engine" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <p>ASSEMBLING PROCEDURAL V8</p>
+      <small>Generating crankshaft, valvetrain and fluid paths…</small>
+    </div>
+
+    <dialog id="helpDialog" class="help-dialog glass">
+      <button id="closeHelp" type="button" aria-label="Close help">×</button>
+      <p class="eyebrow">INTERACTION GUIDE</p>
+      <h2>Explore the assembly</h2>
+      <div class="help-grid">
+        <div><kbd>Drag</kbd><span>Orbit camera</span></div>
+        <div><kbd>Wheel</kbd><span>Zoom</span></div>
+        <div><kbd>Right drag</kbd><span>Pan</span></div>
+        <div><kbd>Click</kbd><span>Inspect part</span></div>
+        <div><kbd>Space</kbd><span>Pause / run</span></div>
+        <div><kbd>E</kbd><span>Exploded view</span></div>
+        <div><kbd>C</kbd><span>Cutaway body</span></div>
+        <div><kbd>L</kbd><span>Labels</span></div>
+      </div>
+      <p class="help-note">The engine is not imported CAD. Every visible part is generated at runtime from parametric primitives and curves in <code>docs/engine/v8-engine.js</code>.</p>
+    </dialog>
+
+    <noscript>This visualization requires JavaScript and WebGL.</noscript>
+  </div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
