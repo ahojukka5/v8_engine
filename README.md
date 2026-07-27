@@ -16,7 +16,12 @@ A detailed, fully procedural **90° cross-plane V8 engine** rendered in Three.js
 - Central intake plenum, throttle body, eight curved runners, rails and injectors
 - Eight individually routed tubular exhaust primaries, paired collectors, clamps and oxygen sensors
 - Harmonic damper, water pump, alternator, idlers, tensioner, closed serpentine belt, starter and flywheel
-- Service-level detail including gasket seams, fasteners, connectors, wiring clips, sensors, brackets, hose clamps, weld beads, drain hardware and individual starter-ring teeth
+- External dry-sump pump, stacked-plate oil cooler and braided pressure/scavenge plumbing
+- Thermostat housing, coolant crossover, temperature sensing and formed coolant hoses
+- Fuel feed/return plumbing, pressure regulator and distributed manifold vacuum circuit
+- Starter, charging, sensor and grounding electrical distribution
+- Flywheel friction face, pilot bearing, pressure plate, diaphragm fingers and clutch fasteners
+- Service-level detail including gasket seams, casting ribs, fasteners, connectors, wiring clips, sensors, brackets, hose clamps, weld beads, drain hardware and individual starter-ring teeth
 
 ## Interaction
 
@@ -42,7 +47,9 @@ The default presentation is deliberately slow and clean: 12 rpm, opaque covers a
 
 ## Detail architecture
 
-The base engine remains in [`docs/engine/v8-engine.js`](docs/engine/v8-engine.js). A separate post-construction pass in [`docs/engine/detail-pass.js`](docs/engine/detail-pass.js):
+The base engine remains in [`docs/engine/v8-engine.js`](docs/engine/v8-engine.js).
+
+The first post-construction pass in [`docs/engine/detail-pass.js`](docs/engine/detail-pass.js):
 
 - repackages ignition coils so boots and terminals no longer protrude through the cam covers
 - replaces the centerline wiring path with bank-specific clipped looms
@@ -52,6 +59,19 @@ The base engine remains in [`docs/engine/v8-engine.js`](docs/engine/v8-engine.js
 - adds oil-pan, bellhousing and lubrication service hardware
 - adds flywheel teeth and crank fasteners
 - adds front-drive fasteners, terminals, brackets and coolant connections
+
+A second pass in [`docs/engine/micro-detail-pass.js`](docs/engine/micro-detail-pass.js) increases mechanical density at system level:
+
+- replaces overscale lifting eyes with compact head-mounted brackets
+- adds cover ribs, complete perimeter fastener fields and loom saddles
+- adds external block ribs, gallery plugs, knock sensors and engine mounts
+- creates an external dry-sump pump, oil cooler, braided lines, AN fittings and P-clamps
+- creates thermostat, coolant crossover, sender, radiator hose and support hardware
+- creates fuel feed/return, regulator, vacuum block, lines and throttle return hardware
+- creates starter cable, charging loom, ground straps and power junction hardware
+- adds header slip joints, heat shields, louvers, EGT probes and collector springs
+- builds a clutch pressure assembly on the flywheel
+- adds triangulated accessory brackets, tensioner housing, timing marks and belt guard
 
 Details are attached to the relevant semantic assembly, so they follow exploded-view transforms and remain inspectable through the same metadata system.
 
@@ -90,6 +110,7 @@ flowchart LR
     UI[HTML controls] --> Scene[Three.js scene]
     Scene --> Engine[V8Engine]
     Engine --> DetailPass[Packaging and detail pass]
+    DetailPass --> MicroDetail[System-level micro detail]
     Engine --> Structure[Structure]
     Engine --> Rotating[Bottom end]
     Engine --> Valvetrain[Valvetrain]
@@ -131,6 +152,7 @@ See [`docs/format-pipeline.md`](docs/format-pipeline.md) for a concrete proposed
     ├── format-pipeline.md
     └── engine
         ├── detail-pass.js
+        ├── micro-detail-pass.js
         ├── materials.js
         ├── primitives.js
         └── v8-engine.js
