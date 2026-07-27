@@ -8,6 +8,12 @@ import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { createMaterials } from './engine/materials.js';
 import { V8Engine } from './engine/v8-engine.js';
+import { applyDetailPass } from './engine/detail-pass.js';
+
+const TWO_PI = Math.PI * 2;
+const FOUR_PI = Math.PI * 4;
+const CRAWL_SLIDER_END = 240;
+const MAX_SLIDER = 1000;
 
 const canvas = document.querySelector('#viewport');
 const loadingScreen = document.querySelector('#loadingScreen');
@@ -25,7 +31,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.08;
+renderer.toneMappingExposure = 0.96;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x07090d);
@@ -49,10 +55,10 @@ scene.environment = pmremGenerator.fromScene(environment, 0.04).texture;
 environment.dispose();
 pmremGenerator.dispose();
 
-const hemisphere = new THREE.HemisphereLight(0xb6c9e3, 0x21160f, 1.35);
+const hemisphere = new THREE.HemisphereLight(0xb6c9e3, 0x21160f, 1.2);
 scene.add(hemisphere);
 
-const keyLight = new THREE.DirectionalLight(0xffefe1, 5.2);
+const keyLight = new THREE.DirectionalLight(0xffefe1, 4.0);
 keyLight.position.set(-6, 12, 9);
 keyLight.castShadow = true;
 keyLight.shadow.mapSize.set(2048, 2048);
@@ -65,11 +71,11 @@ keyLight.shadow.camera.far = 40;
 keyLight.shadow.bias = -0.00045;
 scene.add(keyLight);
 
-const rimLight = new THREE.DirectionalLight(0x6da9ff, 4.0);
+const rimLight = new THREE.DirectionalLight(0x6da9ff, 2.6);
 rimLight.position.set(7, 5, -10);
 scene.add(rimLight);
 
-const warmFill = new THREE.PointLight(0xff6b32, 70, 20, 2.0);
+const warmFill = new THREE.PointLight(0xff6b32, 35, 20, 2.0);
 warmFill.position.set(-5, 1.5, 6);
 scene.add(warmFill);
 
@@ -98,21 +104,22 @@ scene.add(grid);
 
 const materials = createMaterials();
 const engine = new V8Engine(materials);
+applyDetailPass(engine);
 scene.add(engine.root);
-engine.setCutaway(true);
+engine.setCutaway(false);
 
 const composer = new EffectComposer(renderer);
 composer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
 composer.addPass(new RenderPass(scene, camera));
 const outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera);
-outlinePass.edgeStrength = 3.3;
-outlinePass.edgeGlow = 0.75;
-outlinePass.edgeThickness = 1.3;
+outlinePass.edgeStrength = 3.0;
+outlinePass.edgeGlow = 0.48;
+outlinePass.edgeThickness = 1.2;
 outlinePass.pulsePeriod = 2.2;
 outlinePass.visibleEdgeColor.set(0xff8b49);
 outlinePass.hiddenEdgeColor.set(0x4b1a0c);
 composer.addPass(outlinePass);
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.36, 0.55, 0.87);
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.17, 0.38, 0.94);
 composer.addPass(bloomPass);
 composer.addPass(new OutputPass());
 
@@ -124,20 +131,28 @@ const projected = new THREE.Vector3();
 const cameraDirection = new THREE.Vector3();
 
 let running = true;
-let rpm = 820;
+let rpm = 12;
+let lastNonZeroRpm = rpm;
 let explodedTarget = 0;
 let explodedAmount = 0;
-let labelsVisible = true;
+let labelsVisible = false;
 let lastPointerDown = null;
 let labelFrame = 0;
 let fpsSamples = [];
 let cameraTransition = null;
+let cycleScrubbing = false;
 
 const ui = {
   runToggle: document.querySelector('#runToggle'),
   resetView: document.querySelector('#resetView'),
   rpmControl: document.querySelector('#rpmControl'),
   rpmOutput: document.querySelector('#rpmOutput'),
+  cycleControl: document.querySelector('#cycleControl'),
+  cycleOutput: document.querySelector('#cycleOutput'),
+  stepMinusTen: document.querySelector('#stepMinusTen'),
+  stepMinusOne: document.querySelector('#stepMinusOne'),
+  stepPlusOne: document.querySelector('#stepPlusOne'),
+  stepPlusTen: document.querySelector('#stepPlusTen'),
   engineState: document.querySelector('#engineState'),
   firingCylinder: document.querySelector('#firingCylinder'),
   crankAngle: document.querySelector('#crankAngle'),
@@ -206,11 +221,64 @@ function updateRangeFill(input) {
   input.style.background = `linear-gradient(90deg, var(--accent) 0 ${percentage}%, rgba(255,255,255,.13) ${percentage}% 100%)`;
 }
 
+function sliderToRpm(sliderValue) {
+  const value = Number(sliderValue);
+  if (value <= 0) return 0;
+  if (value <= CRAWL_SLIDER_END) return Math.max(1, Math.round((value / CRAWL_SLIDER_END) * 20));
+  const normalized = (value - CRAWL_SLIDER_END) / (MAX_SLIDER - CRAWL_SLIDER_END);
+  return Math.min(6200, Math.round((20 + normalized * normalized * 6180) / 10) * 10);
+}
+
+function rpmToSlider(engineRpm) {
+  if (engineRpm <= 0) return 0;
+  if (engineRpm <= 20) return Math.round((engineRpm / 20) * CRAWL_SLIDER_END);
+  const normalized = Math.sqrt((engineRpm - 20) / 6180);
+  return Math.round(CRAWL_SLIDER_END + normalized * (MAX_SLIDER - CRAWL_SLIDER_END));
+}
+
+function formatRpm(engineRpm) {
+  if (engineRpm === 0) return '0 rpm · stopped';
+  if (engineRpm <= 20) return `${engineRpm} rpm · crawl`;
+  return `${engineRpm.toLocaleString()} rpm`;
+}
+
+function cycleDegrees() {
+  return ((engine.cycleAngle / FOUR_PI) * 720 + 720) % 720;
+}
+
 function setRunning(nextRunning) {
-  running = nextRunning;
-  ui.runToggle.textContent = running ? 'Pause engine' : 'Start engine';
-  ui.engineState.textContent = running ? 'RUNNING' : 'PAUSED';
+  running = Boolean(nextRunning) && rpm > 0;
+  ui.runToggle.textContent = running ? 'Stop engine' : 'Start engine';
+  ui.engineState.textContent = running ? (rpm <= 20 ? 'CRAWL' : 'RUNNING') : 'STOPPED';
   ui.engineState.classList.toggle('paused', !running);
+}
+
+function setRpm(nextRpm, { preserveRunning = true } = {}) {
+  rpm = THREE.MathUtils.clamp(Math.round(nextRpm), 0, 6200);
+  if (rpm > 0) lastNonZeroRpm = rpm;
+  ui.rpmControl.value = String(rpmToSlider(rpm));
+  ui.rpmOutput.textContent = formatRpm(rpm);
+  updateRangeFill(ui.rpmControl);
+  if (rpm === 0) setRunning(false);
+  else if (!preserveRunning) setRunning(true);
+  else setRunning(running);
+}
+
+function setCycleDegrees(nextDegrees) {
+  const requested = Number(nextDegrees);
+  const normalized = ((requested % 720) + 720) % 720;
+  const displayed = requested === 720 ? 720 : normalized;
+  engine.cycleAngle = (normalized / 720) * FOUR_PI;
+  engine.crankAngle = engine.cycleAngle % TWO_PI;
+  engine.update(0, rpm, false);
+  ui.cycleControl.value = displayed.toFixed(0);
+  ui.cycleOutput.textContent = `${displayed.toFixed(0)}° / 720°`;
+  updateRangeFill(ui.cycleControl);
+}
+
+function stepCycle(degrees) {
+  setRunning(false);
+  setCycleDegrees(cycleDegrees() + degrees);
 }
 
 function makeLabels() {
@@ -235,7 +303,6 @@ function updateLabels() {
     const systemVisible = engine.systems[label.system]?.visible ?? true;
     label.element.style.display = systemVisible ? 'flex' : 'none';
     if (!systemVisible) continue;
-
     engine.getLabelWorldPosition(label, labelPosition);
     projected.copy(labelPosition).project(camera);
     const behind = projected.z < -1 || projected.z > 1;
@@ -243,7 +310,6 @@ function updateLabels() {
     if (behind) continue;
     label.element.style.left = `${(projected.x * 0.5 + 0.5) * width}px`;
     label.element.style.top = `${(-projected.y * 0.5 + 0.5) * height}px`;
-
     if (labelFrame % 7 === 0) {
       const toLabel = labelPosition.clone().sub(camera.position);
       pointer.set(projected.x, projected.y);
@@ -295,13 +361,27 @@ renderer.domElement.addEventListener('pointerup', (event) => {
   lastPointerDown = null;
 });
 
-ui.runToggle.addEventListener('click', () => setRunning(!running));
-ui.resetView.addEventListener('click', () => setCameraPreset('hero'));
-ui.rpmControl.addEventListener('input', () => {
-  rpm = Number(ui.rpmControl.value);
-  ui.rpmOutput.textContent = `${rpm.toLocaleString()} rpm`;
-  updateRangeFill(ui.rpmControl);
+ui.runToggle.addEventListener('click', () => {
+  if (running) {
+    setRunning(false);
+    return;
+  }
+  if (rpm === 0) setRpm(lastNonZeroRpm || 12);
+  setRunning(true);
 });
+ui.resetView.addEventListener('click', () => setCameraPreset('hero'));
+ui.rpmControl.addEventListener('input', () => setRpm(sliderToRpm(ui.rpmControl.value)));
+ui.cycleControl.addEventListener('pointerdown', () => {
+  cycleScrubbing = true;
+  setRunning(false);
+});
+ui.cycleControl.addEventListener('input', () => setCycleDegrees(ui.cycleControl.value));
+ui.cycleControl.addEventListener('pointerup', () => { cycleScrubbing = false; });
+ui.cycleControl.addEventListener('change', () => { cycleScrubbing = false; });
+ui.stepMinusTen.addEventListener('click', () => stepCycle(-10));
+ui.stepMinusOne.addEventListener('click', () => stepCycle(-1));
+ui.stepPlusOne.addEventListener('click', () => stepCycle(1));
+ui.stepPlusTen.addEventListener('click', () => stepCycle(10));
 ui.cutawayToggle.addEventListener('change', () => engine.setCutaway(ui.cutawayToggle.checked));
 ui.explodeToggle.addEventListener('change', () => { explodedTarget = ui.explodeToggle.checked ? 1 : 0; });
 ui.labelsToggle.addEventListener('change', () => { labelsVisible = ui.labelsToggle.checked; });
@@ -331,7 +411,14 @@ document.addEventListener('keydown', (event) => {
   const key = event.key.toLowerCase();
   if (event.code === 'Space') {
     event.preventDefault();
+    if (!running && rpm === 0) setRpm(lastNonZeroRpm || 12);
     setRunning(!running);
+  } else if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    stepCycle(event.shiftKey ? -10 : -1);
+  } else if (event.key === 'ArrowRight') {
+    event.preventDefault();
+    stepCycle(event.shiftKey ? 10 : 1);
   } else if (key === 'e') {
     ui.explodeToggle.checked = !ui.explodeToggle.checked;
     explodedTarget = ui.explodeToggle.checked ? 1 : 0;
@@ -346,10 +433,17 @@ document.addEventListener('keydown', (event) => {
 
 function updateTelemetry(delta) {
   ui.firingCylinder.textContent = `#${engine.currentFiringCylinder}`;
-  ui.crankAngle.textContent = `${Math.round((engine.crankAngle / (Math.PI * 2)) * 360)}°`;
+  ui.crankAngle.textContent = `${Math.round((engine.crankAngle / TWO_PI) * 360)}°`;
   ui.triangleValue.textContent = renderer.info.render.triangles > 999
     ? `${(renderer.info.render.triangles / 1000).toFixed(0)}k`
     : String(renderer.info.render.triangles);
+
+  if (!cycleScrubbing) {
+    const degrees = cycleDegrees();
+    ui.cycleControl.value = degrees.toFixed(0);
+    ui.cycleOutput.textContent = `${degrees.toFixed(0)}° / 720°`;
+    updateRangeFill(ui.cycleControl);
+  }
 
   fpsSamples.push(1 / Math.max(delta, 0.0001));
   if (fpsSamples.length > 30) fpsSamples.shift();
@@ -372,7 +466,9 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 
-updateRangeFill(ui.rpmControl);
+setRpm(rpm);
+setCycleDegrees(0);
+setRunning(true);
 setTimeout(() => loadingScreen.classList.add('hidden'), 500);
 
 renderer.setAnimationLoop(() => {
