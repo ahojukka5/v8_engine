@@ -11,17 +11,19 @@ A detailed, fully procedural **90° cross-plane V8 engine** rendered in Three.js
 - Eight animated pistons with ring packs, skirts and wrist pins
 - Eight animated connecting rods solved from slider–crank kinematics every frame
 - Two aluminum cylinder heads, two sculpted cam covers and four camshafts
-- 32 valves with stems, heads, helical springs, retainers and followers
+- 32 valves with fixed guides and spring seats, moving stems, retainers, buckets, keepers and compressing dual springs
+- Four toothed cam sprockets, timing chains, guides, hydraulic tensioners and bolted cam bearing caps
 - Eight sealed coil-on-plug units in molded plug wells
 - Central intake plenum, throttle body, eight curved runners, rails and injectors
 - Eight individually routed tubular exhaust primaries, paired collectors, clamps and oxygen sensors
 - Harmonic damper, water pump, alternator, idlers, tensioner, closed serpentine belt, starter and flywheel
 - External dry-sump pump, stacked-plate oil cooler and braided pressure/scavenge plumbing
+- Louvered windage tray, crank scraper, screened pickup, main-cap hardware and eight piston-cooling jets
 - Thermostat housing, coolant crossover, temperature sensing and formed coolant hoses
 - Fuel feed/return plumbing, pressure regulator and distributed manifold vacuum circuit
 - Starter, charging, sensor and grounding electrical distribution
 - Flywheel friction face, pilot bearing, pressure plate, diaphragm fingers and clutch fasteners
-- Service-level detail including gasket seams, casting ribs, fasteners, connectors, wiring clips, sensors, brackets, hose clamps, weld beads, drain hardware and individual starter-ring teeth
+- Service-level detail including gasket seams, casting ribs, flush service plugs, fasteners, connectors, wiring clips, sensors, brackets, hose clamps, weld beads, drain hardware and individual starter-ring teeth
 
 ## Interaction
 
@@ -45,7 +47,7 @@ The viewer provides:
 
 The default presentation is deliberately slow and clean: 12 rpm, opaque covers and labels hidden. Cutaway and callouts remain available on demand.
 
-## Detail architecture
+## Detail and kinematics architecture
 
 The base engine remains in [`docs/engine/v8-engine.js`](docs/engine/v8-engine.js).
 
@@ -72,6 +74,16 @@ A second pass in [`docs/engine/micro-detail-pass.js`](docs/engine/micro-detail-p
 - adds header slip joints, heat shields, louvers, EGT probes and collector springs
 - builds a clutch pressure assembly on the flywheel
 - adds triangulated accessory brackets, tensioner housing, timing marks and belt guard
+
+A third pass in [`docs/engine/valvetrain-cleanup-pass.js`](docs/engine/valvetrain-cleanup-pass.js) resolves the visual and kinematic defects that become visible in close cutaway inspection:
+
+- stops translating the complete valve group through the cylinder head
+- keeps the valve guide, stem seal and lower spring seat fixed to the head
+- moves only the valve, retainer, keepers, lash shim and bucket with calculated lift
+- compresses concentric inner and outer springs around their fixed lower seats
+- replaces protruding bronze core plugs with shallow recessed bosses and flush steel plugs
+- adds line-bored cam caps, toothed sprockets, timing chains, chain guides and tensioners
+- adds windage control, oil pickup, main-cap nuts and piston-cooling jets to the exposed bottom end
 
 Details are attached to the relevant semantic assembly, so they follow exploded-view transforms and remain inspectable through the same metadata system.
 
@@ -111,6 +123,7 @@ flowchart LR
     Scene --> Engine[V8Engine]
     Engine --> DetailPass[Packaging and detail pass]
     DetailPass --> MicroDetail[System-level micro detail]
+    MicroDetail --> Cleanup[Kinematics and artifact cleanup]
     Engine --> Structure[Structure]
     Engine --> Rotating[Bottom end]
     Engine --> Valvetrain[Valvetrain]
@@ -119,6 +132,7 @@ flowchart LR
     Engine --> Accessories[Accessories]
     Clock[Crank and 720-degree cycle] --> Rotating
     Clock --> Valvetrain
+    Clock --> Cleanup
     Clock --> Fire[Combustion pulses]
     Metadata[Part metadata] --> Picking[Raycast inspector]
     Engine --> Labels[Projected labels]
@@ -153,6 +167,7 @@ See [`docs/format-pipeline.md`](docs/format-pipeline.md) for a concrete proposed
     └── engine
         ├── detail-pass.js
         ├── micro-detail-pass.js
+        ├── valvetrain-cleanup-pass.js
         ├── materials.js
         ├── primitives.js
         └── v8-engine.js
