@@ -12,17 +12,22 @@ A detailed, fully procedural **90° cross-plane V8 engine** rendered in Three.js
 - Eight animated connecting rods solved from slider–crank kinematics every frame
 - Two aluminum cylinder heads, two sculpted cam covers and four camshafts
 - 32 valves with stems, heads, helical springs, retainers and followers
-- Eight coil-on-plug ignition units and spark plugs
+- Eight sealed coil-on-plug units in molded plug wells
 - Central intake plenum, throttle body, eight curved runners, rails and injectors
 - Eight individually routed tubular exhaust primaries, paired collectors, clamps and oxygen sensors
 - Harmonic damper, water pump, alternator, idlers, tensioner, closed serpentine belt, starter and flywheel
-- Lubrication, coolant, breather and wiring details
+- Service-level detail including gasket seams, fasteners, connectors, wiring clips, sensors, brackets, hose clamps, weld beads, drain hardware and individual starter-ring teeth
 
 ## Interaction
 
 The viewer provides:
 
-- Variable engine speed from 80 to 6,200 rpm
+- True stop at `0 rpm`
+- Precision crawl range from `1–20 rpm`
+- Nonlinear speed control up to `6,200 rpm`
+- Manual `0–720°` four-stroke cycle scrubber
+- Deterministic `±1°` and `±10°` crank stepping
+- Arrow-key stepping; hold Shift for 10-degree increments
 - Four-stroke firing visualization using the order `1-8-4-3-6-5-7-2`
 - Cutaway materials to reveal the moving bottom end
 - Animated exploded view
@@ -32,6 +37,23 @@ The viewer provides:
 - Optional wire overlay
 - Hero, front, side, top, crankshaft and valvetrain camera presets
 - Live FPS, crank angle, active cylinder and triangle telemetry
+
+The default presentation is deliberately slow and clean: 12 rpm, opaque covers and labels hidden. Cutaway and callouts remain available on demand.
+
+## Detail architecture
+
+The base engine remains in [`docs/engine/v8-engine.js`](docs/engine/v8-engine.js). A separate post-construction pass in [`docs/engine/detail-pass.js`](docs/engine/detail-pass.js):
+
+- repackages ignition coils so boots and terminals no longer protrude through the cam covers
+- replaces the centerline wiring path with bank-specific clipped looms
+- adds cam-cover service interfaces and sealing details
+- adds intake instrumentation, injector wiring and rail hardware
+- adds header studs, welds and supports
+- adds oil-pan, bellhousing and lubrication service hardware
+- adds flywheel teeth and crank fasteners
+- adds front-drive fasteners, terminals, brackets and coolant connections
+
+Details are attached to the relevant semantic assembly, so they follow exploded-view transforms and remain inspectable through the same metadata system.
 
 ## Run locally
 
@@ -55,10 +77,9 @@ npm run check
 
 The site is already arranged for branch-based GitHub Pages publication:
 
-1. Merge the implementation into `main`.
-2. Open **Settings → Pages**.
-3. Choose **Deploy from a branch**.
-4. Select branch **main** and folder **/docs**.
+1. Open **Settings → Pages**.
+2. Choose **Deploy from a branch**.
+3. Select branch **main** and folder **/docs**.
 
 The `.nojekyll` file keeps the directory as a plain static ES-module application.
 
@@ -68,13 +89,14 @@ The `.nojekyll` file keeps the directory as a plain static ES-module application
 flowchart LR
     UI[HTML controls] --> Scene[Three.js scene]
     Scene --> Engine[V8Engine]
+    Engine --> DetailPass[Packaging and detail pass]
     Engine --> Structure[Structure]
     Engine --> Rotating[Bottom end]
     Engine --> Valvetrain[Valvetrain]
     Engine --> Intake[Intake]
     Engine --> Exhaust[Exhaust]
     Engine --> Accessories[Accessories]
-    Clock[Crank and cycle angles] --> Rotating
+    Clock[Crank and 720-degree cycle] --> Rotating
     Clock --> Valvetrain
     Clock --> Fire[Combustion pulses]
     Metadata[Part metadata] --> Picking[Raycast inspector]
@@ -108,6 +130,7 @@ See [`docs/format-pipeline.md`](docs/format-pipeline.md) for a concrete proposed
     ├── main.js
     ├── format-pipeline.md
     └── engine
+        ├── detail-pass.js
         ├── materials.js
         ├── primitives.js
         └── v8-engine.js
